@@ -1,0 +1,125 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+struct Task {
+    int id;
+    std::string description;
+    bool completed;
+};
+
+void loadTasks(std::vector<Task>& tasks) {
+    std::ifstream file("tasks.txt");
+    if (file.is_open()) {
+        Task task;
+        while (file >> task.id >> std::ws && std::getline(file, task.description) && file >> task.completed) {
+            tasks.push_back(task);
+        }
+        file.close();
+    }
+}
+
+void saveTasks(const std::vector<Task>& tasks) {
+    std::ofstream file("tasks.txt");
+    if (file.is_open()) {
+        for (const auto& task : tasks) {
+            file << task.id << "\n" << task.description << "\n" << task.completed << "\n";
+        }
+        file.close();
+    }
+}
+
+void addTask(std::vector<Task>& tasks) {
+    Task newTask;
+    newTask.id = tasks.empty() ? 1 : tasks.back().id + 1;
+    newTask.completed = false;
+    
+    std::cout << "Enter task description: ";
+    std::cin.ignore();
+    std::getline(std::cin, newTask.description);
+    
+    tasks.push_back(newTask);
+    saveTasks(tasks);
+}
+
+void listTasks(const std::vector<Task>& tasks) {
+    for (const auto& task : tasks) {
+        std::cout << task.id << ". " << task.description << " [" << (task.completed ? "x" : " ") << "]\n";
+    }
+}
+
+void markTaskCompleted(std::vector<Task>& tasks) {
+    int taskId;
+    std::cout << "Enter task ID to mark as completed: ";
+    std::cin >> taskId;
+    
+    auto it = std::find_if(tasks.begin(), tasks.end(), [taskId](const Task& task) {
+        return task.id == taskId;
+    });
+    
+    if (it != tasks.end()) {
+        it->completed = true;
+        saveTasks(tasks);
+    } else {
+        std::cout << "Task not found.\n";
+    }
+}
+
+void deleteTask(std::vector<Task>& tasks) {
+    int taskId;
+    std::cout << "Enter task ID to delete: ";
+    std::cin >> taskId;
+    
+    auto it = std::remove_if(tasks.begin(), tasks.end(), [taskId](const Task& task) {
+        return task.id == taskId;
+    });
+    
+    if (it != tasks.end()) {
+        tasks.erase(it, tasks.end());
+        saveTasks(tasks);
+    } else {
+        std::cout << "Task not found.\n";
+    }
+}
+
+int main() {
+    std::vector<Task> tasks;
+    loadTasks(tasks);
+    
+    int choice;
+    do {
+        std::cout << "\nTo-Do List Menu:\n";
+        std::cout << "1. Add Task\n";
+        std::cout << "2. List Tasks\n";
+        std::cout << "3. Mark Task as Completed\n";
+        std::cout << "4. Delete Task\n";
+        std::cout << "0. Exit\n";
+        std::cout << "Enter your choice: ";
+        std::cin >> choice;
+        
+        switch (choice) {
+            case 1:
+                addTask(tasks);
+                break;
+            case 2:
+                listTasks(tasks);
+                break;
+            case 3:
+                markTaskCompleted(tasks);
+                break;
+            case 4:
+                deleteTask(tasks);
+                break;
+            case 0:
+                std::cout << "Exiting...\n";
+                break;
+            default:
+                std::cout << "Invalid choice. Try again.\n";
+                break;
+        }
+    } while (choice != 0);
+
+    return 0;
+}
